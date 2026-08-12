@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>新增协作组组长、副组长表决</title>
+<style>
+:root{--blue:#1677ff;--green:#168a45;--red:#cf1322;--text:#101828;--muted:#667085;--line:#eaecf0;--bg:#f6f7f9}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}.wrap{max-width:720px;margin:0 auto;padding:22px 14px 120px}.header{padding:12px 4px 18px}.org{font-size:13px;color:var(--muted);margin-bottom:7px}.title{font-size:26px;font-weight:800;line-height:1.35}.note{font-size:14px;color:var(--muted);line-height:1.7;margin-top:10px}.deadline{margin-top:12px;padding:10px 12px;background:#fff7e6;border:1px solid #ffe7ba;border-radius:10px;color:#ad6800;font-size:13px}.card{background:#fff;border-radius:14px;margin:14px 0;box-shadow:0 2px 12px rgba(16,24,40,.05);overflow:hidden}.pad{padding:16px}.section-title{font-size:17px;font-weight:750;margin-bottom:10px}.field{width:100%;padding:12px 13px;margin-top:9px;border:1px solid var(--line);border-radius:10px;background:#f9fafb;font-size:15px;outline:none}.field:focus{border-color:#91caff;background:#fff}.actions{display:flex;gap:10px}.btn{border:0;border-radius:10px;padding:13px 14px;font-size:15px;font-weight:700}.all{flex:1;background:var(--blue);color:#fff}.reset{background:#eef2f6;color:#475467}.tip{font-size:12px;color:#98a2b3;line-height:1.6;margin-top:10px}.group-head{padding:15px 16px;background:#f8fafc;font-size:17px;font-weight:780;border-bottom:1px solid #f0f2f5}.candidate{display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #f2f4f7;align-items:center}.info{min-width:0;flex:1}.topline{display:flex;align-items:center;gap:7px}.role{font-size:11px;background:#f2f4f7;color:#344054;border-radius:6px;padding:3px 6px;white-space:nowrap}.name{font-size:16px;font-weight:750}.unit{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45}.votes{display:flex;gap:6px}.vote{border:1px solid #e5e7eb;background:#f8fafc;color:#667085;border-radius:8px;padding:8px 11px;font-size:13px;white-space:nowrap}.vote.agree.active{background:#eaf7ef;border-color:#b7ebc6;color:var(--green);font-weight:750}.vote.disagree.active{background:#fff1f0;border-color:#ffccc7;color:var(--red);font-weight:750}.alt{padding:15px 16px 17px;background:#fffdf8}.alt-title{font-size:14px;font-weight:750;color:#7a4b00}.alt-desc{font-size:12px;color:#a06b1a;margin-top:5px;line-height:1.5}.submitbar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);border-top:1px solid #eef0f3;padding:10px 14px calc(10px + env(safe-area-inset-bottom));z-index:20}.submitbar>div{max-width:720px;margin:auto;display:flex;gap:10px}.submit{flex:1;background:var(--blue);color:#fff;border:0;border-radius:11px;padding:14px;font-size:17px;font-weight:780}.submit:disabled{opacity:.45}.status{padding:22px 16px;text-align:center}.ok{font-size:42px;color:var(--green);font-weight:800}.status h2{margin:8px 0}.hidden{display:none!important}.closed{background:#fff1f0;border:1px solid #ffccc7;color:#a8071a;padding:14px;border-radius:12px;margin:14px 0;font-weight:650}.error{background:#fff1f0;color:#a8071a;padding:10px 12px;border-radius:9px;margin-top:10px;font-size:13px}.privacy{font-size:12px;color:#98a2b3;margin-top:10px;line-height:1.55}@media(max-width:520px){.candidate{align-items:flex-start;flex-direction:column}.votes{width:100%}.vote{flex:1}.title{font-size:23px}}
+</style>
+</head>
+<body>
+<div class="wrap" id="mainWrap">
+  <div class="header">
+    <div class="org">中华医学会消化内镜学分会第九届专科委员会</div>
+    <div class="title">新增协作组组长、副组长表决</div>
+    <div class="note">请对每位候选人分别选择“同意”或“不同意”。点击“全部同意”可一次性选择全部同意，之后仍可单独修改。每个协作组末尾可填写拟推荐人选及单位。</div>
+    <div class="deadline" id="deadlineText">投票截止：2026年8月15日 23:59:59（北京时间）</div>
+  </div>
+
+  <div id="closedBox" class="closed hidden">本次投票已于 2026年8月15日 23:59:59（北京时间）结束，现已停止提交。</div>
+
+  <form id="voteForm">
+    <div class="card pad">
+      <div class="section-title">投票人信息</div>
+      <input class="field" id="voterName" name="投票人姓名" placeholder="姓名（必填）" maxlength="30" required>
+      <input class="field" id="voterUnit" name="投票人单位" placeholder="单位（必填）" maxlength="60" required>
+      <div class="privacy">用于核对投票身份。投票内容通过表单服务集中发送至管理员邮箱；本页面不会公开展示个人投票结果。</div>
+    </div>
+
+    <div class="card pad">
+      <div class="actions">
+        <button class="btn all" type="button" id="allAgree">✓ 全部同意</button>
+        <button class="btn reset" type="button" id="resetVotes">重新选择</button>
+      </div>
+      <div class="tip">“全部同意”后，下方所有候选人会自动选择同意；如对个别人不同意，可再单独点击“不同意”。</div>
+    </div>
+
+    <div id="groups"></div>
+
+    <input type="hidden" name="_subject" value="协作组组长、副组长投票提交">
+    <input type="hidden" name="_template" value="table">
+    <input type="hidden" name="_captcha" value="false">
+    <input type="hidden" name="投票截止时间" value="2026-08-15 23:59:59 北京时间">
+    <input type="hidden" id="clientTime" name="提交时间（浏览器）" value="">
+    <input type="hidden" id="summaryJson" name="投票汇总JSON" value="">
+    <div id="errorBox" class="error hidden"></div>
+  </form>
+</div>
+
+<div id="successBox" class="wrap hidden">
+  <div class="card status"><div class="ok">✓</div><h2>表决已提交</h2><div style="color:#667085;line-height:1.7">感谢参与。当前浏览器已标记为完成投票，请勿重复提交。</div></div>
+</div>
+
+<div class="submitbar" id="submitBar"><div><button class="submit" id="submitBtn" type="button">提交表决</button></div></div>
+
+<script>
+const DEADLINE = new Date('2026-08-15T23:59:59+08:00');
+const FORM_ENDPOINT = 'https://formsubmit.co/ajax/425397272@qq.com';
+const STORAGE_KEY = 'committeeVoteSubmitted_20260812_v1';
+const groups = [
+ {id:'ibd',name:'IBD内镜诊治协作组',candidates:[
+  {role:'组长',name:'刘小伟',unit:'中南大学湘雅二医院'},
+  {role:'副组长',name:'缪应雷',unit:'昆明医科大学第一附属医院'},
+  {role:'副组长',name:'杨红',unit:'北京协和医院'},
+  {role:'副组长',name:'毛仁',unit:'中山大学附属第一医院'},
+  {role:'副组长',name:'施海韵',unit:'北京友谊医院'},
+  {role:'副组长',name:'柏愚',unit:'上海长海医院'},
+  {role:'副组长',name:'徐桂芳',unit:'安徽医科大学第一附属医院'}]},
+ {id:'surgery',name:'内镜外科青年协作组',candidates:[
+  {role:'组长',name:'张磊',unit:'兰州大学第一医院'},
+  {role:'副组长',name:'王琦',unit:'宁夏医科大学总医院'},
+  {role:'副组长',name:'杨富春',unit:'浙江大学附属第一医院'},
+  {role:'副组长',name:'蔡开琳',unit:'华中科技大学同济医学院附属协和医院'},
+  {role:'副组长',name:'刘威',unit:'中南大学湘雅二医院'},
+  {role:'副组长',name:'陈震',unit:'天津市南开医院'},
+  {role:'副组长',name:'张桂信',unit:'大连医科大学附属第二医院'}]},
+ {id:'colon',name:'大肠镜青年协作组',candidates:[
+  {role:'组长',name:'刘思德',unit:'南方医科大学南方医院'},
+  {role:'副组长',name:'王强',unit:'北京协和医院'},
+  {role:'副组长',name:'何梦江',unit:'复旦大学附属中山医院'},
+  {role:'副组长',name:'赵九龙',unit:'海军军医大学附属长海医院'},
+  {role:'副组长',name:'冯哲',unit:'四川大学附属华西医院'},
+  {role:'副组长',name:'王健',unit:'辽宁方大总医院'},
+  {role:'副组长',name:'赖秋华',unit:'南方医科大学附属南方医院'}]}
+];
+const state = {};
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function key(gi,ci){return `${gi}_${ci}`}
+function render(){
+ const host=document.getElementById('groups'); host.innerHTML='';
+ groups.forEach((g,gi)=>{
+  const card=document.createElement('div');card.className='card';
+  let html=`<div class="group-head">${gi+1}. ${esc(g.name)}</div>`;
+  g.candidates.forEach((c,ci)=>{
+   const v=state[key(gi,ci)]||'';
+   html+=`<div class="candidate"><div class="info"><div class="topline"><span class="role">${esc(c.role)}</span><span class="name">${esc(c.name)}</span></div><div class="unit">${esc(c.unit)}</div></div><div class="votes"><button type="button" class="vote agree ${v==='同意'?'active':''}" data-gi="${gi}" data-ci="${ci}" data-v="同意">同意</button><button type="button" class="vote disagree ${v==='不同意'?'active':''}" data-gi="${gi}" data-ci="${ci}" data-v="不同意">不同意</button></div></div>`;
+  });
+  html+=`<div class="alt"><div class="alt-title">不同意时，可填写拟推荐人选</div><div class="alt-desc">如对本组人选有不同意见，可填写你建议的人选及单位；姓名和单位请同时填写。</div><input class="field alt-name" data-gi="${gi}" name="${esc(g.name)}-拟推荐人选" placeholder="拟推荐人选姓名" maxlength="30"><input class="field alt-unit" data-gi="${gi}" name="${esc(g.name)}-拟推荐人选单位" placeholder="拟推荐人选单位" maxlength="60"></div>`;
+  card.innerHTML=html;host.appendChild(card);
+ });
+ host.querySelectorAll('.vote').forEach(b=>b.addEventListener('click',()=>{state[key(+b.dataset.gi,+b.dataset.ci)]=b.dataset.v;renderPreserveAlternatives()}));
+}
+function captureAlternatives(){const a={};document.querySelectorAll('.alt-name').forEach(x=>{a[x.dataset.gi]=a[x.dataset.gi]||{};a[x.dataset.gi].name=x.value});document.querySelectorAll('.alt-unit').forEach(x=>{a[x.dataset.gi]=a[x.dataset.gi]||{};a[x.dataset.gi].unit=x.value});return a}
+function restoreAlternatives(a){document.querySelectorAll('.alt-name').forEach(x=>x.value=(a[x.dataset.gi]&&a[x.dataset.gi].name)||'');document.querySelectorAll('.alt-unit').forEach(x=>x.value=(a[x.dataset.gi]&&a[x.dataset.gi].unit)||'')}
+function renderPreserveAlternatives(){const a=captureAlternatives();render();restoreAlternatives(a)}
+function setError(msg){const e=document.getElementById('errorBox');e.textContent=msg;e.classList.remove('hidden');e.scrollIntoView({behavior:'smooth',block:'center'})}
+function clearError(){document.getElementById('errorBox').classList.add('hidden')}
+function isClosed(){return new Date()>DEADLINE}
+function enforceDeadline(){if(isClosed()){document.getElementById('closedBox').classList.remove('hidden');document.getElementById('submitBtn').disabled=true;document.getElementById('allAgree').disabled=true;document.getElementById('resetVotes').disabled=true}else{const diff=DEADLINE-new Date();const h=Math.floor(diff/3600000),m=Math.floor(diff%3600000/60000);document.getElementById('deadlineText').textContent=`投票截止：2026年8月15日 23:59:59（北京时间）｜剩余约 ${h}小时${m}分钟`}}
+render();enforceDeadline();setInterval(enforceDeadline,60000);
+document.getElementById('allAgree').onclick=()=>{groups.forEach((g,gi)=>g.candidates.forEach((c,ci)=>state[key(gi,ci)]='同意'));renderPreserveAlternatives()};
+document.getElementById('resetVotes').onclick=()=>{if(confirm('将清空所有“同意/不同意”选择，已填写的拟推荐人选会保留。是否继续？')){Object.keys(state).forEach(k=>delete state[k]);renderPreserveAlternatives()}};
+function buildSummary(){return groups.map((g,gi)=>({协作组:g.name,候选人:g.candidates.map((c,ci)=>({职务:c.role,姓名:c.name,单位:c.unit,表决:state[key(gi,ci)]||''})),拟推荐人选:(document.querySelector(`.alt-name[data-gi="${gi}"]`)||{}).value||'',拟推荐单位:(document.querySelector(`.alt-unit[data-gi="${gi}"]`)||{}).value||''}))}
+async function submitVote(){
+ clearError();
+ if(isClosed())return setError('本次投票已经结束，不能再提交。');
+ if(localStorage.getItem(STORAGE_KEY))return setError('当前浏览器已经提交过本次投票，请勿重复提交。');
+ const name=document.getElementById('voterName').value.trim(),unit=document.getElementById('voterUnit').value.trim();
+ if(!name)return setError('请填写投票人姓名。'); if(!unit)return setError('请填写投票人单位。');
+ for(let gi=0;gi<groups.length;gi++)for(let ci=0;ci<groups[gi].candidates.length;ci++)if(!state[key(gi,ci)])return setError(`请完成“${groups[gi].name}”所有候选人的表决。`);
+ for(let gi=0;gi<groups.length;gi++){const n=document.querySelector(`.alt-name[data-gi="${gi}"]`).value.trim(),u=document.querySelector(`.alt-unit[data-gi="${gi}"]`).value.trim();if((n&&!u)||(!n&&u))return setError(`“${groups[gi].name}”的拟推荐人选姓名和单位请同时填写。`)}
+ const disagree=Object.values(state).filter(v=>v==='不同意').length;
+ if(!confirm(`共21位候选人，其中“不同意”${disagree}人。提交后本浏览器将不能重复提交，确认提交吗？`))return;
+ const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='正在提交…';
+ document.getElementById('clientTime').value=new Date().toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})+' 北京时间';
+ document.getElementById('summaryJson').value=JSON.stringify(buildSummary());
+ const form=document.getElementById('voteForm');const fd=new FormData(form);
+ groups.forEach((g,gi)=>g.candidates.forEach((c,ci)=>fd.append(`${g.name}-${c.role}-${c.name}`,state[key(gi,ci)])));
+ try{const r=await fetch(FORM_ENDPOINT,{method:'POST',body:fd,headers:{Accept:'application/json'}});const j=await r.json().catch(()=>({}));if(!r.ok||j.success===false)throw new Error(j.message||'提交服务暂时不可用');localStorage.setItem(STORAGE_KEY,JSON.stringify({name,unit,time:Date.now()}));document.getElementById('mainWrap').classList.add('hidden');document.getElementById('submitBar').classList.add('hidden');document.getElementById('successBox').classList.remove('hidden');window.scrollTo(0,0)}catch(err){setError('提交失败：'+(err.message||'网络异常')+'。请检查网络后重试。');btn.disabled=false;btn.textContent='提交表决'}
+}
+document.getElementById('submitBtn').onclick=submitVote;
+if(localStorage.getItem(STORAGE_KEY)){document.getElementById('errorBox').textContent='提示：当前浏览器记录显示已经提交过本次投票。';document.getElementById('errorBox').classList.remove('hidden')}
+</script>
+</body>
+</html>
