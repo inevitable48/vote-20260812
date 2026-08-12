@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>表决实时统计</title>
+<script src="https://static.cloudbase.net/cloudbase-js-sdk/2.28.6/cloudbase.full.js"></script>
+<style>
+:root{--blue:#1677ff;--green:#168a45;--red:#cf1322;--text:#101828;--muted:#667085;--line:#eaecf0;--bg:#f6f7f9}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}.wrap{max-width:900px;margin:auto;padding:22px 14px 80px}.title{font-size:27px;font-weight:800}.sub{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.6}.card{background:#fff;border-radius:14px;margin:14px 0;padding:16px;box-shadow:0 2px 12px rgba(16,24,40,.05)}.login{max-width:520px;margin:80px auto}.field{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:10px;font-size:15px;margin-top:10px}.btn{border:0;background:var(--blue);color:#fff;padding:12px 16px;border-radius:10px;font-weight:700;font-size:15px;margin-top:10px;width:100%}.stats{display:flex;gap:12px;flex-wrap:wrap}.stat{flex:1;min-width:140px;background:#fff;border-radius:14px;padding:18px}.num{font-size:30px;font-weight:800}.label{font-size:13px;color:var(--muted);margin-top:4px}.group-title{font-size:18px;font-weight:800;margin-bottom:8px}.row{display:grid;grid-template-columns:minmax(190px,1.6fr) 100px 100px 90px;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid #f2f4f7}.name{font-weight:700}.unit{font-size:12px;color:var(--muted);margin-top:4px}.yes{color:var(--green);font-weight:700}.no{color:var(--red);font-weight:700}.rate{font-weight:800}.altbox{margin-top:14px;padding:12px;background:#fffdf8;border-radius:10px}.alt-title{font-weight:750;color:#7a4b00}.alt{font-size:13px;color:#7a4b00;margin-top:7px}.voter{display:grid;grid-template-columns:50px 100px 1fr 80px 160px;gap:8px;padding:10px 0;border-bottom:1px solid #f2f4f7;font-size:13px;align-items:center}.head{font-weight:750;color:#475467}.toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center}.refresh{border:1px solid #91caff;color:#0958d9;background:#f0f7ff;border-radius:8px;padding:8px 12px}.status{font-size:12px;color:var(--muted)}.error{margin-top:10px;padding:10px;background:#fff1f0;color:#a8071a;border-radius:8px;font-size:13px}.hidden{display:none!important}@media(max-width:650px){.row{grid-template-columns:1fr 72px 72px 70px;font-size:13px}.voter{grid-template-columns:38px 75px 1fr 65px}.voter .time{display:none}.title{font-size:23px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="loginBox" class="card login">
+    <div class="title">表决实时统计</div>
+    <div class="sub">仅管理员查看。请输入 CloudBase 云函数中配置的管理口令。</div>
+    <input id="adminKey" class="field" type="password" placeholder="管理口令">
+    <button id="loginBtn" class="btn">进入实时统计</button>
+    <div id="loginError" class="error hidden"></div>
+  </div>
+
+  <div id="dashboard" class="hidden">
+    <div class="toolbar">
+      <div><div class="title">表决实时统计</div><div class="sub">每 10 秒自动刷新一次</div></div>
+      <button id="refreshBtn" class="refresh">立即刷新</button>
+    </div>
+    <div class="stats"><div class="stat"><div id="totalVotes" class="num">0</div><div class="label">已提交有效投票</div></div><div class="stat"><div id="lastRefresh" class="num" style="font-size:18px">--</div><div class="label">最近刷新</div></div></div>
+    <div id="groups"></div>
+    <div class="card"><div class="group-title">已投票人员</div><div class="voter head"><div>序号</div><div>姓名</div><div>单位</div><div>不同意</div><div class="time">提交时间</div></div><div id="voters"></div></div>
+    <div id="dashError" class="error hidden"></div>
+  </div>
+</div>
+<script>
+const ENV_ID='changhai-d3g5wjyhka349046a';
+const app=cloudbase.init({env:ENV_ID,region:'ap-shanghai'});
+const auth=app.auth();
+let adminKey='';let timer=null;
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+function showError(id,msg){const e=document.getElementById(id);e.textContent=msg;e.classList.remove('hidden')}
+function clearError(id){document.getElementById(id).classList.add('hidden')}
+async function fetchResults(){
+ clearError('dashError');
+ try{
+  await auth.signInAnonymously();
+  const res=await app.callFunction({name:'getResults',data:{adminKey},parse:true});
+  let out=res&&res.result;if(typeof out==='string'){try{out=JSON.parse(out)}catch(e){}}
+  if(!out||!out.ok)throw new Error((out&&out.message)||'读取失败');
+  render(out);return true;
+ }catch(e){showError(document.getElementById('dashboard').classList.contains('hidden')?'loginError':'dashError',e.message||'读取失败');return false}
+}
+function render(out){
+ document.getElementById('totalVotes').textContent=out.totalVotes;
+ document.getElementById('lastRefresh').textContent=new Date().toLocaleTimeString('zh-CN',{hour12:false});
+ const gh=document.getElementById('groups');gh.innerHTML='';
+ out.groups.forEach((g,gi)=>{
+  const card=document.createElement('div');card.className='card';
+  let h=`<div class="group-title">${gi+1}. ${esc(g.name)}</div>`;
+  g.candidates.forEach(c=>{h+=`<div class="row"><div><div class="name">${esc(c.role)} · ${esc(c.name)}</div><div class="unit">${esc(c.unit)}</div></div><div class="yes">同意 ${c.agree}</div><div class="no">不同意 ${c.disagree}</div><div class="rate">${c.agreeRate}%</div></div>`});
+  h+=`<div class="altbox"><div class="alt-title">拟推荐人选</div>${g.alternatives.length?g.alternatives.map(a=>`<div class="alt">${esc(a.name)}｜${esc(a.unit)}｜${a.count}票</div>`).join(''):'<div class="alt">暂无</div>'}</div>`;
+  card.innerHTML=h;gh.appendChild(card);
+ });
+ const vh=document.getElementById('voters');vh.innerHTML=out.voters.map(v=>`<div class="voter"><div>${v.index}</div><div>${esc(v.name)}</div><div>${esc(v.unit)}</div><div>${v.disagreeCount}</div><div class="time">${esc(v.clientTime)}</div></div>`).join('');
+}
+document.getElementById('loginBtn').onclick=async()=>{clearError('loginError');adminKey=document.getElementById('adminKey').value.trim();if(!adminKey)return showError('loginError','请输入管理口令');const ok=await fetchResults();if(ok){document.getElementById('loginBox').classList.add('hidden');document.getElementById('dashboard').classList.remove('hidden');timer=setInterval(fetchResults,10000)}};
+document.getElementById('refreshBtn').onclick=fetchResults;
+document.getElementById('adminKey').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click()});
+</script>
+</body>
+</html>
